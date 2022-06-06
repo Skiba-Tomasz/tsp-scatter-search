@@ -118,13 +118,13 @@ def selectBestSolutions(paths, costs, topPercent):
     lowestCosts = []
     for i in range(0, topPathsCount):
         minCostElement = min(costsCoppy)
-        topPaths.append(paths[costsCoppy.index(minCostElement)])
+        topPaths.append(paths[costs.index(minCostElement)])
         lowestCosts.append(minCostElement)
         costsCoppy.remove(minCostElement)
     return topPaths, lowestCosts
 
 
-def combinePaths(p1, p2, n, costMap):
+def combinePaths(p1, p2, costMap):
     """
         p1 - path that will be combined, p1 should be lower cost path than p2 
         p2 - path that will be combined
@@ -137,49 +137,129 @@ def combinePaths(p1, p2, n, costMap):
     if calculateCost(p1, costMap) > calculateCost(p2, costMap):
         raise ValueError("p1 has higher cost than p2")
     
-    print("Combining paths:")
-    print(f"{p1}")
-    print(f"{p2}")
+    # print("Combining paths:")
+    # print(f"{p1}")
+    # print(f"{p2}")
 
     combinedPath = []
-    combinedPath.append(p1[0]) 
-    l = len(p1)
-    for i in range (1, len(p1)):
-        if p1[i-1] == p2[i-1] and p1[i] == p2[i]:
-            combinedPath.append(p1[i])
-            continue
-        if i + n < l:
-            print(f"Reducing n value - {n} would be out of range. Setting {l - i}")
-            n = l - i
-        print(f"Path choice differ at i={i}, stepping back")
-        combinedPath.remove(combinedPath[i])
-        i -= 1
-        p1Fragment = p1[i: i+n]
-        p2Fragment = p2[i: i+n]
-        bestFragment = None
-        if calculateCost(p1Fragment, costMap) < calculateCost(p2Fragment, costMap):
-            bestFragment = p1Fragment
-            print(f"Best fragment is from path 1: {bestFragment}")
+    # combinedPath.append(p1[0])
+    subSetStartPoint = None
+
+    """
+        Creating sub array that contains of the same elements for both paths, and picking the best one
+        Eg.
+        [1,2,3,4,5,6]
+        [1,3,2,5,4,6]
+        The pathing order between 1 -> 6 will be chosen based on the lowes cost of subpath
+    """
+    faulty = [1, 15, 7, 11, 18, 9, 14, 17, 6, 4, 16, 10, 5, 3, 12, 8, 19, 2, 13]
+    for k in range(0, len(faulty)):
+        if faulty[k] != p1[k]:
+            changed = True
+
+    i = 0
+    while i < len(p1):
+        combinedPath.append(p1[i])
+
+        if p1[i] == p2[i]:
+            subSetStartPoint = p1[i]
         else:
-            bestFragment = p2Fragment
-            print(f"Best fragment is from path 2: {bestFragment}")
-        if bestFragment not in combinedPath:
-            for element in bestFragment:
-                combinedPath.append(element)
-            i += n
-        else:
-            print(f"Could not combine fragment. Elements of bestFragment {list(set(combinedPath).intersection(bestFragment))} are in current path")
-            combinedPath.append(p1[i])
+            subSetStartPoint = None
+
+        if subSetStartPoint != None:
+            startIndex = p1.index(subSetStartPoint)
+            if startIndex == len(p1) -1:
+                break
+            endIndex = None
+            for s in range(startIndex + 1, len(p1)):
+                if p1[s] == p2[s]:
+                    endIndex = s
+                    break
+            if endIndex is None or endIndex - startIndex < 2:
+                i += 1
+                continue
+            subSet1 = p1[startIndex: endIndex + 1]
+            subSet2 = p2[startIndex: endIndex + 1]
+            subSetIntersection = list(set(subSet1).intersection(subSet2))
+            if len(subSetIntersection) == len(subSet1):
+                if calculateCost(subSet1, costMap) > calculateCost(subSet2, costMap):
+                    combinedPath = combinedPath[0: startIndex]
+                    for element in subSet2:
+                        combinedPath.append(element)
+                else:
+                    combinedPath = combinedPath[0: startIndex]
+                    for element in subSet1:
+                        combinedPath.append(element)
+                i = endIndex
+        i += 1
+    return combinedPath
+                
+
+        # if subSetStartPoint == None:
+        #     combinedPath.append(p1[i])
+        # if subSetStartPoint != None and p1[i] == p2[i]:   #TODO Remove subSetStartPoint != None later
+        #     startIndex = p1.index(subSetStartPoint)
+        #     p1Fragment = p1[startIndex: i]
+        #     p2Fragment = p2[startIndex: i]
+        #     if calculateCost(p1Fragment, costMap) > calculateCost(p2Fragment, costMap):
+        #         combinedPath = combinedPath[0: startIndex]
+        #         for element in p2Fragment:
+        #             combinedPath.append(element)
+        # elif subSetStartPoint == None and p1[i] == p2[i]:
+        #     subSetStartPoint = p1[i]
+        # else:
+        #     subSetStartPoint = None
+
+
+
+        # if p1[i-1] == p2[i-1] and p1[i] == p2[i]:
+        #     combinedPath.append(p1[i])
+        #     continue
+        # if i + n < l:
+        #     print(f"Reducing n value - {n} would be out of range. Setting {l - i}")
+        #     n = l - i
+        # print(f"Path choice differ at i={i}, stepping back")
+        # combinedPath.remove(combinedPath[i])
+        # i -= 1
+        # p1Fragment = p1[i: i+n]
+        # p2Fragment = p2[i: i+n]
+        # bestFragment = None
+        # if calculateCost(p1Fragment, costMap) < calculateCost(p2Fragment, costMap):
+        #     bestFragment = p1Fragment
+        #     print(f"Best fragment is from path 1: {bestFragment}")
+        # else:
+        #     bestFragment = p2Fragment
+        #     print(f"Best fragment is from path 2: {bestFragment}")
+        # if bestFragment not in combinedPath:
+        #     for element in bestFragment:
+        #         combinedPath.append(element)
+        #     i += n
+        # else:
+        #     print(f"Could not combine fragment. Elements of bestFragment {list(set(combinedPath).intersection(bestFragment))} are in current path")
+        #     combinedPath.append(p1[i])
 
 
 
 if __name__ == '__main__':
 
-    # for i in range(0, 20):
-    # Initialize phase 
-    graph, costMap, points = loadPointsFromFile("points-10.csv")
-    paths = generateStartingSolutions(graph, costMap, 10, seed = 54840)
-    costs = [calculateCost(path,costMap) for path in paths]
+    for i in range(0, 2000):
+        # Initialize phase 
+        graph, costMap, points = loadPointsFromFile("points.csv")
+        # paths = generateStartingSolutions(graph, costMap, 1000, seed = 54840)
+        paths = generateStartingSolutions(graph, costMap, 10)
+        costs = [calculateCost(path,costMap) for path in paths]
 
-    bestPaths, lowestCosts = selectBestSolutions(paths, costs, 50)
-    # End of initialize phase 
+        bestPaths, lowestCosts = selectBestSolutions(paths, costs, 100)
+
+        for i in range(0, len(bestPaths) - 1):
+            for x in range(i+1, len(bestPaths)):
+                combined = combinePaths(bestPaths[i], bestPaths[x], costMap)
+                print("END")
+                print(f"{bestPaths[i]}")
+                print(f"{bestPaths[x]}")
+                changed = False
+                for k in range(0, len(bestPaths[i])):
+                    if bestPaths[i][k] != combined[k]:
+                        changed = True
+                print(f"{combined} changed: {changed}")
+        # End of initialize phase 
